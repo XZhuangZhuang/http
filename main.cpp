@@ -26,14 +26,15 @@ void addsig( int sig, void( handler )(int), bool restart = true )
     memset( &sa, '\0', sizeof( sa ) );
     sa.sa_handler = handler;
     if( restart )
-    {
-        sa.sa_flags |= SA_RESTART;
+    {   //SA_RESTART用在为某个信号设置信号处理函数时，给该信号设置的一个标记。
+       //一旦给信号设置了SA_RESTART标记，那么当执行某个阻塞系统调用时，收到该信号时，进程不会返回，而是重新执行该系统调用。
+        sa.sa_flags |= SA_RESTART;//当系统调用被信号中断时，会重新启动系统调用
     }
     sigfillset( &sa.sa_mask );
     assert( sigaction( sig, &sa, NULL ) != -1 );
 }
 
-void show_error( int connfd, const char* info )
+void show_error( int connfd, const char* info )//发送错误信息
 {
     printf( "%s", info );
     send( connfd, info, strlen( info ), 0 );
@@ -48,8 +49,8 @@ int main( int argc, char* argv[] )
         printf( "usage: %s ip_address port_number\n", basename( argv[0] ) );
         return 1;
     }
-    const char* ip = argv[1];
-    int port = atoi( argv[2] );
+    const char* ip = argv[1];//IP地址
+    int port = atoi( argv[2] );//端口
 	
 	/*忽略SIGPIPE信号*/
     addsig( SIGPIPE, SIG_IGN );
