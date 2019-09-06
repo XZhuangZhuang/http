@@ -397,13 +397,13 @@ bool http_conn::write()
     int bytes_to_send = m_write_idx;
     if ( bytes_to_send == 0 )
     {
-        modfd( m_epollfd, m_sockfd, EPOLLIN );
+        modfd( m_epollfd, m_sockfd, EPOLLIN );//EPOLLONESHOT事件每次需要重置事件
         init();
         return true;
     }
 
     while( 1 )
-    {
+    {    ////集中写，m_sockfd是http连接对应的描述符，m_iv是iovec结构体数组表示内存块地址，m_iv_count是数组的长度即多少个内存块将一次集中写到m_sockfd
         temp = writev( m_sockfd, m_iv, m_iv_count );
         if ( temp <= -1 )
         {
@@ -411,7 +411,7 @@ bool http_conn::write()
 			同一客户的下一个请求，但这可以保证连接的完整性*/
             if( errno == EAGAIN )
             {
-                modfd( m_epollfd, m_sockfd, EPOLLOUT );
+                modfd( m_epollfd, m_sockfd, EPOLLOUT );////重置EPOLLONESHOT事件,注册可写事件表示若m_sockfd没有写失败则关闭连接
                 return true;
             }
 			/*发送HTTP响应成功，根据HTTP请求中的Connection字段决定是否立即关闭连接*/
@@ -439,7 +439,7 @@ bool http_conn::write()
     }
 }
 /*往写缓冲区写入待发送的数据*/
-bool http_conn::add_response( const char* format, ... )
+bool http_conn::add_response( const char* format, ... )////HTTP应答主要是将应答数据添加到写缓冲区m_write_buf
 {
     if( m_write_idx >= WRITE_BUFFER_SIZE )
     {
